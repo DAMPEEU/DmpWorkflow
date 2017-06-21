@@ -264,7 +264,7 @@ def safe_copy(infile, outfile, **kwargs):
     # Try not to step on any toes....
     infile = expandvars(infile)
     outfile = expandvars(outfile)
-    cmnd = "cp %s %s" % (infile, outfile)
+    cmnd = "cp -v -n %s %s" % (infile, outfile)
     if infile.startswith("root:"):
         if kwargs['debug']: print 'input file is on xrootd - switching to XRD library'
         xrootd = True
@@ -272,7 +272,7 @@ def safe_copy(infile, outfile, **kwargs):
         if kwargs['debug']: print 'output file is on xrootd - switching to XRD library'
         xrootd = True
     if xrootd:
-        cmnd = "xrdcp -f %s %s" % (infile, outfile)
+        cmnd = "xrdcp %s %s" % (infile, outfile)
     md5in = md5out = None
     if kwargs['checksum'] and not xrootd:
         md5in = md5sum(infile, blocksize=kwargs['checksum_blocksize'])
