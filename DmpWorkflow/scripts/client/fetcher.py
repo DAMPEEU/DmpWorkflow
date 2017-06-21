@@ -47,7 +47,7 @@ def main(args=None):
         if opts.skipDBcheck:
             print 'skipping DB check, assume no jobs to be in the system'
         else:
-            stats = 'Running,Submitted,Suspended'
+            stats = 'Running,Submitted'
             res = get("%s/newjobs/" % DAMPE_WORKFLOW_URL,
                           data={"site": str(batchsite), "status_list": stats, "fastQuery":"True", "pilot":"True" if pilot else "False"})
             res.raise_for_status()
