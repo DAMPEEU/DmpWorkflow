@@ -3,7 +3,7 @@ from os.path import abspath, join as oPjoin, dirname
 from sys import path as sys_path
 
 sys_path.append(abspath(oPjoin(dirname(__file__), '..')))
-from flask.ext.script import Manager, Server, Shell
+from flask_script import Manager, Server, Shell
 import DmpWorkflow.core.models as DmpWorkflowModels
 from DmpWorkflow.core import app, db
 from DmpWorkflow.config.defaults import cfg

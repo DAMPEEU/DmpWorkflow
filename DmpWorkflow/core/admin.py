@@ -6,7 +6,9 @@ import logging
 from flask import Blueprint, request, redirect, render_template, url_for, send_file
 from flask.views import MethodView
 from datetime import datetime, timedelta
-from flask.ext.mongoengine.wtf import model_form
+#!-- DEPRECATED --!
+#from flask.ext.mongoengine.wtf import model_form
+from flask_mongoengine.wtf import model_form
 from DmpWorkflow.core.auth import requires_auth
 from DmpWorkflow.core.models import Job, JobInstance
 from StringIO import StringIO
