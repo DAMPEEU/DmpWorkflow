@@ -32,8 +32,8 @@ class BatchJob(HPCBatchJob):
         d['nodes'] = 1
         d['time']  = "24:00:00"  #defaults.get("cputime","24:00:00")
         d['partition'] = defaults.get('queue',"normal")
-        d['constraint'] = 'gpu' # no use of gpu
-        d['mem'] = "40GB"        #defaults.get("memory","4G")
+        d['constraint'] = defaults.get('constraint','mc') # no use of gpu
+        d['mem'] = "60GB"        #defaults.get("memory","4G")
         d['output'] = op_join(wd,"output.log")
         d['error'] = op_join(wd,"output.err")
         #d['ntasks-per-node']=nCPU
@@ -44,10 +44,11 @@ class BatchJob(HPCBatchJob):
         job_file.write("".join(data))
         # now add CSCS specific stuff
         job_file.write("module load daint-gpu\n")
-        job_file.write("module load shifter\n")
+        job_file.write("module load shifter-ng\n")
         job_file.write("export DAMPE_WORKFLOW_SERVER_URL=%s\n"%DAMPE_WORKFLOW_URL)
         job_file.write("export NTHREADS=%i\n"%nCPU)
-        shifter_call = '\nsrun -C gpu shifter --image={image} --volume={wd}:/workdir bash -c "bash /workdir/script"\n'.format(image=d['image'],wd=wd)
+        ### shifter_call = '\nsrun -C gpu shifter --image={image} --volume={wd}:/workdir bash -c "bash /workdir/script"\n'.format(image=d['image'],wd=wd)
+        shifter_call = '\nsrun -C {constraint} shifter run --volume={wd}:/workdir {image} bash -c "bash /workdir/script"\n'.format(image=d['image'],wd=wd,constraint=d['constraint'])
         job_file.write(shifter_call)
         job_file.close()
         output = self.__run__("sbatch submit.sh")
