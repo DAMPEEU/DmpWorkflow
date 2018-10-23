@@ -183,6 +183,11 @@ if __name__ == '__main__':
     if max_mem >= 1e6:
         # must be in kB!
         max_mem/=1024 
+    nthreads=int(getenv("NTHREADS",1))
+    if nthreads > 1:
+        executor.logThis("Watchdog: detected %i threads to be requested, adjusting limits accordingly",nthreads)
+        max_mem*=float(nthreads)
+        max_cpu*=float(nthreads)    
     # get the max ratios
     try:
         executor.job.updateStatus("Running", "PreparingJob", hostname=gethostname(), body=executor.job.getJSONbody(),

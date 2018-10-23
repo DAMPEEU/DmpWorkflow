@@ -82,6 +82,8 @@ if DAMPE_BUILD == "client":
 environ["EXEC_DIR_ROOT"] = EXEC_DIR_ROOT
 
 BATCH_DEFAULTS = {key: getenv("BATCH_%s" % key.upper()) for key in ['system', 'requirements', 'extra', 'queue','name']}
+BATCH_DEFAULTS['image'] = cfg.get("site","HPCimage")
+BATCH_DEFAULTS['numcores']=cfg.get("site","HPCnumcores")
 BATCH_DEFAULTS['memory'] = cfg.get("site", "HPCmemory")
 BATCH_DEFAULTS['cputime'] = cfg.get("site", "HPCcputime")
 BATCH_DEFAULTS['name'] = cfg.get("site", "name")
