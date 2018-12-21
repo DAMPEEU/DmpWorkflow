@@ -8,12 +8,12 @@ from warnings import warn, simplefilter
 
 simplefilter('always', DeprecationWarning)
 from re import findall
-from DmpWorkflow.config.defaults import BATCH_DEFAULTS as defaults
+from DmpWorkflow.config.defaults import DAMPE_WORKFLOW_URL, BATCH_DEFAULTS as defaults
 from DmpWorkflow.hpc.batch import BATCH, BatchJob as HPCBatchJob
 from DmpWorkflow.utils.shell import run
 from collections import OrderedDict
 from copy import deepcopy
-from os.path import dirname, curdir
+from os.path import dirname, curdir, join as op_join
 from os import chdir
 
 # raise ImportError("CondorHT class not supported")
@@ -27,22 +27,23 @@ class BatchJob(HPCBatchJob):
         wd = dirname(self.logFile)
         chdir(wd)
         d = OrderedDict()
-        d['universe'] = 'vanilla'
-        d['executable'] = self.command
-        d['output'] = self.logFile
-        d['error'] = self.logFile.replace("log", "err")
-        d['log'] = self.logFile.replace("log", "clog")
-        d['request_cpus'] = 1
-        d['request_memory'] = self.memory
-        d['rank'] = 'Memory'
-        d['requirements'] = "MaxHosts == 1"
-        d['environment'] = "CONDOR_ID=$(Cluster)"  # .$(Process)"
-        csi_file = open("job.csi", "w")
-        data = ["%s = %s\n" % (k, v) for k, v in d.iteritems()]
+        #d['universe'] = 'vanilla'
+        #d['executable'] = self.command
+	d['job-name'] = self.name
+	d['nodes'] = 1
+	d['partition'] = defaults.get('queue','dpnc')
+	d['time'] = defaults.get("cputime","48:00:00")
+	d['mem'] = defaults.get("memory","4G")
+        d['output'] = op_join(wd,"output.log")
+        d['error'] = op_join(wd,"output.err")
+        csi_file = open("submit.sh", "w")
+	csi_file.write("#!/bin/bash\n")
+        data = ["#SBATCH --%s=%s\n" % (k, v) for k, v in d.iteritems()]
         csi_file.write("".join(data))
-        csi_file.write("queue\n")
+	csi_file.write("export DAMPE_WORKFLOW_SERVER_URL=%s\n"%DAMPE_WORKFLOW_URL)
+        csi_file.write("bash script\n")
         csi_file.close()
-        output = self.__run__("condor_submit job.csi -name %s" % defaults['extra'])
+        output = self.__run__("sbatch submit.sh")
         chdir(pwd)
         return self.__regexId__(output)
 
@@ -58,7 +59,7 @@ class BatchJob(HPCBatchJob):
         return bk
 
     def kill(self):
-        cmd = "condor_rm -name %s %s.0" % (defaults.extra, self.batchId)
+        cmd = "scancel %s" % (self.batchId)
         self.__run__(cmd)
         self.update("status", "Failed")
 
@@ -66,7 +67,12 @@ class BatchJob(HPCBatchJob):
 class BatchEngine(BATCH):
     kind = "slurm"
     name = defaults['extra']
-    status_map = {"R": "Running", "PD": "Pending"}
+    status_map = {"CA":"Cancelled","CD":"Completed",
+                  "CF":"Configuring","CG":"Completing",
+                  "F":"Failed","NF":"Failed",
+                  "PD":"Pending", "PR":"Failed",
+                  "R":"Running","S":"Pending",
+                  "TO":"Failed"}
 
     def update(self):
         self.allJobs.update(self.aggregateStatii())
