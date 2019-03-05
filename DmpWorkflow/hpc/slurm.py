@@ -31,9 +31,9 @@ class BatchJob(HPCBatchJob):
         #d['executable'] = self.command
 	d['job-name'] = self.name
 	d['nodes'] = 1
-	d['partition'] = defaults.get('queue','dpnc')
-	d['time'] = defaults.get("cputime","48:00:00")
-	d['mem'] = defaults.get("memory","4G")
+	d['partition'] = defaults.get('queue')
+	d['time'] = defaults.get("cputime")
+	d['mem'] = defaults.get("memory")
         d['output'] = op_join(wd,"output.log")
         d['error'] = op_join(wd,"output.err")
         csi_file = open("submit.sh", "w")
