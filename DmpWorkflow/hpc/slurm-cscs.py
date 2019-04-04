@@ -33,25 +33,29 @@ class BatchJob(HPCBatchJob):
         d['time']  = "24:00:00"  #defaults.get("cputime","24:00:00")
         d['partition'] = defaults.get('queue',"normal")
         d['constraint'] = defaults.get('constraint','mc') # no use of gpu
-        d['mem'] = "60GB"        #defaults.get("memory","4G")
+        #d['mem'] = "60GB"        #defaults.get("memory","4G")
         d['output'] = op_join(wd,"output.log")
         d['error'] = op_join(wd,"output.err")
+	d['account'] = defaults.get('account','sm24')
         #d['ntasks-per-node']=nCPU
-        d['image'] = defaults.get("image","zimmerst85/dampesw-cscs:latest")
+        img = defaults.get("image","zimmerst85/dampesw-cscs:latest")
+        #d['image'] = defaults.get("image","zimmerst85/dampesw-cscs:latest")
         job_file = open("submit.sh", "w")
         job_file.write("#!/bin/bash\n")
         data = ["#SBATCH --%s=%s\n" % (k, v) for k, v in d.iteritems()]
         job_file.write("".join(data))
         # now add CSCS specific stuff
-        job_file.write("module load daint-gpu\n")
+        job_file.write("module load daint-{constraint}\n".format(constraint=d['constraint']))
         job_file.write("module load shifter-ng\n")
         job_file.write("export DAMPE_WORKFLOW_SERVER_URL=%s\n"%DAMPE_WORKFLOW_URL)
         job_file.write("export NTHREADS=%i\n"%nCPU)
         ### shifter_call = '\nsrun -C gpu shifter --image={image} --volume={wd}:/workdir bash -c "bash /workdir/script"\n'.format(image=d['image'],wd=wd)
-        shifter_call = '\nsrun -C {constraint} shifter run --volume={wd}:/workdir {image} bash -c "bash /workdir/script"\n'.format(image=d['image'],wd=wd,constraint=d['constraint'])
+        shifter_call = '\nsrun -C {constraint} shifter run --mount=type=bind,source={wd},destination=/workdir --mount=type=bind,source=$HOME,destination=$HOME {image} bash -c "bash /workdir/script"\n'.format(image=img,wd=wd,constraint=d['constraint'])
         job_file.write(shifter_call)
         job_file.close()
-        output = self.__run__("sbatch submit.sh")
+        #print 'we are in directory: ',wd
+        output = self.__run__("sbatch --account=sm24 submit.sh")
+        print output
         chdir(pwd)
         return self.__regexId__(output)
 
