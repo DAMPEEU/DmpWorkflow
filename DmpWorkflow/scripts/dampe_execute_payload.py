@@ -118,9 +118,9 @@ class PayloadExecutor(object):
         try:
             self.job.updateStatus("Running", "PreparingOutputData")
         except Exception as err:
-            self.logThis("error when updating job status to: PreparingOutputData")		# Log it but don't let it interrupt the run
+            self.job.logError(err)		# Log it but don't let it interrupt the run
             self.logThis("EXCEPTION: %s", err)
-            sleep(300)		# Sleep for 5mn then try again
+            sleep( float(BATCH_DEFAULTS.get("sleep time","300.")) )		# Sleep then try again
             try:
                 self.job.updateStatus("Running", "PreparingOutputData")	
             except Exception as err:
