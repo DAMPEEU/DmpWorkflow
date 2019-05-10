@@ -87,7 +87,11 @@ class PayloadExecutor(object):
         self.logThis("about to run payload")
         CMD = "%s payload" % self.job.executable
         self.logThis("CMD: %s", CMD)
-        self.job.updateStatus("Running", "ExecutingApplication")
+        try:
+            self.job.updateStatus("Running", "ExecutingApplication")
+        except Exception as err:
+            self.logThis("EXCEPTION: %s", err)
+            self.job.logError(err)
         output, error, rc = run_cached(CMD.split(), cachedir=abspath(curdir))  # use caching to file!
         self.logThis('reading output from payload %s',output.name)
         print output.read()
@@ -111,7 +115,17 @@ class PayloadExecutor(object):
             return 0
 
     def __postRun(self):
-        self.job.updateStatus("Running", "PreparingOutputData")
+        try:
+            self.job.updateStatus("Running", "PreparingOutputData")
+        except Exception as err:
+            self.job.logError(err)		# Log it but don't let it interrupt the run
+            self.logThis("EXCEPTION: %s", err)
+            sleep( float(BATCH_DEFAULTS.get("sleep time","300.")) )		# Sleep then try again
+            try:
+                self.job.updateStatus("Running", "PreparingOutputData")	
+            except Exception as err:
+                self.logThis("EXCEPTION: %s", err)
+			
         for fi in self.job.OutputFiles:
             src = expandvars(fi['source'])
             tg = expandvars(fi['target'])
@@ -228,5 +242,8 @@ if __name__ == '__main__':
             # output of memory is in kilobytes.
             if executor.job.monitoring_enabled:
                 executor.logThis("ProcessResources: %s"%str(prm))
-                executor.job.updateStatus("Running",None,resources=prm)
+                try:
+                    executor.job.updateStatus("Running",None,resources=prm)
+                except Exception as err:
+                    executor.logThis("EXCEPTION: %s", err)
             sleep(float(BATCH_DEFAULTS.get("sleeptime","300."))) # sleep for 5m
